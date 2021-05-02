@@ -1,0 +1,5 @@
+gym
+imageio
+atari-py
+opencv-python
+logger
