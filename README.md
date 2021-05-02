@@ -5,7 +5,10 @@ This project was created by Jamshidbek Mirzakhalov for the Deep Learning class a
 
 Easy way to check and validate the results would be to look under */results* folder, it has the final replay buffer for both of the algorithms as well as the logs that you can check out (and visualize) using Tensorboard. 
 
-To reproduce the results and check out the code, follow these part of the code
+
+Current results were obtained by running the code on the free preemptible Google Colab GPUs. Each model took ~9 hours to train.
+
+To reproduce the results and check out the code, follow these part of the code:
 
 ##  Installing the necessary libraries
 

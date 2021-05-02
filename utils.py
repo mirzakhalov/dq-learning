@@ -4,11 +4,37 @@
 import numpy as np
 import os
 os.environ.setdefault('PATH', '')
-from collections import deque
+from collections import deque, namedtuple
 import gym
 from gym import spaces
 import cv2
+import random
+from logger import logger
+import tensorflow as tf
+
 cv2.ocl.setUseOpenCL(False)
+
+
+
+class Environment:
+
+    def __init__(self, env_id, train=True):
+        clip_rewards = True if train else False
+        self.env = wrap_deepmind(make_atari(env_id), clip_rewards=clip_rewards, frame_stack=True)
+    
+    def reset(self):
+        reset_state = self.env.reset()
+        return np.array(reset_state)
+    
+    def render(self):
+        return self.env.render(mode='rgb_array')
+
+    def step(self, action):
+        next_state, reward, done, info = self.env.step(action)
+        return np.array(next_state), reward, done, info
+
+    def get_action_space_size(self):
+        return self.env.action_space.n
 
 
 class NoopResetEnv(gym.Wrapper):
@@ -221,8 +247,6 @@ class ScaledFloatFrame(gym.ObservationWrapper):
         self.observation_space = gym.spaces.Box(low=0, high=1, shape=env.observation_space.shape, dtype=np.float32)
 
     def observation(self, observation):
-        # careful! This undoes the memory optimization, use
-        # with smaller replay buffers only.
         return np.array(observation).astype(np.float32) / 255.0
 
 class LazyFrames(object):
@@ -284,12 +308,6 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, 
     return env
 
 
-from collections import namedtuple
-import random
-from logger import logger
-import tensorflow as tf
-import numpy as np
-
 
 Experience = namedtuple("Experience", ("state", "action", "reward", "next_state", "terminal"))
 
@@ -307,14 +325,6 @@ class ReplayMemory:
         self._index = 0
         self._full = False
         self.verbose = verbose
-
-        if verbose:
-            # state and next_state will use uint8 (8 bit = 1 Byte)
-            # action uses int32 (32 bit = 4 Byte)
-            # reward uses float32 (32 bit = 4 Byte)
-            # terminal uses boolean (8 bit = 1 Byte (numpy))
-            total_est_mem = self.capacity * (np.prod(state_shape) * 4 * 2 + 4 + 4 + 1) / 1024.0**3
-            logger.info("Estimated memory usage ONLY for storing replays: {:.4f} GB".format(total_est_mem))
 
     def __len__(self):
         return len(self._memory)
